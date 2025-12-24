@@ -15,24 +15,33 @@ def main() -> None:
     else:
         raise ValueError("players.json must contain a list or dict of players")
     for nickname, player_data in player_list:
+        race_data = player_data.get("race", "")
+        if not race_data:
+            continue
         race, created = Race.objects.get_or_create(
-            name=player_data["race"]["name"],
-            defaults={"description": player_data["race"]["description"]})
-        for player_skill in player_data["race"].get("skills", []):
+            name=race_data.get("name"),
+            defaults={"description": race_data.get("description", "")})
+        for skill_data in race_data.get("skills", []):
+            skill_name = skill_data.get("name", "")
+            if not skill_name:
+                continue
             skill, created = Skill.objects.get_or_create(
-                name=player_skill["name"],
+                name=skill_name,
                 race=race,
-                defaults={"bonus": player_skill.get("bonus")})
+                defaults={"bonus": skill_data.get("bonus", "")})
         guild = None
-        if player_data.get("guild"):
-            guild, created = Guild.objects.get_or_create(
-                name=player_data["guild"]["name"],
-                defaults={
-                    "description": player_data["guild"]["description"]})
+        guild_info = player_data.get("guild", "")
+        if guild_info and isinstance(guild_info, dict):
+            guild_name = guild_info.get("name", "")
+            guild, _ = Guild.objects.get_or_create(
+                name=guild_name,
+                defaults={"description": guild_info.get("description", "")},)
+
         player, created = Player.objects.get_or_create(
             nickname=nickname,
             defaults={
-                "email": player_data["email"], "bio": player_data["bio"],
+                "email": player_data.get("email", ""),
+                "bio": player_data.get("bio", ""),
                 "race": race,
                 "guild": guild})
 
